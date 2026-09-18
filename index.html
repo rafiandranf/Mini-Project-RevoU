@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense & Budget Visualizer</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="app-header">
+    <h1> Expense & Budget Visualizer.</h1>
+    <p class="subtitle">Track your daily spending</p>
+  </header>
+
+  <!-- ===== BALANCE CARD ===== -->
+  <section class="balance-section">
+    <div class="balance-card">
+      <span class="balance-label" id="balanceLabel">Total Spent</span>
+      <span class="balance-amount" id="totalBalance">Rp 0</span>
+    </div>
+  </section>
+
+  <!-- ===== TABS ===== -->
+  <div class="tabs-container">
+    <button class="tab-btn active" data-tab="dashboard">🏠 Home</button>
+    <button class="tab-btn" data-tab="daily">📆 Daily</button>
+    <button class="tab-btn" data-tab="monthly">📅 Monthly</button>
+  </div>
+
+  <!-- ===== DASHBOARD TAB ===== -->
+  <main class="tab-content active" id="tab-dashboard">
+
+    <!-- Add Transaction Form -->
+    <section class="card form-section">
+      <h2>Add Transaction</h2>
+      <form id="transactionForm" novalidate>
+
+        <div class="form-group">
+          <label for="itemName">Item Name</label>
+          <input type="text" id="itemName" placeholder="e.g. Lunch, Grab, Cinema" />
+          <span class="error-msg" id="err-itemName">Please enter item name.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="amount">Amount (Rp)</label>
+          <input type="number" id="amount" placeholder="e.g. 25000" min="1" />
+          <span class="error-msg" id="err-amount">Please enter a valid amount.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="category">Category</label>
+          <select id="category">
+            <option value="">-- Select Category --</option>
+            <option value="Food">Food</option>
+            <option value="Transport">Transport</option>
+            <option value="Fun">Fun</option>
+          </select>
+          <span class="error-msg" id="err-category">Please select a category.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="txDate">Date</label>
+          <input type="date" id="txDate" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">+ Add Transaction</button>
+      </form>
+
+      <!-- Custom Category Sub-section -->
+      <div class="custom-category-section">
+        <button class="btn btn-ghost" id="toggleCustomCat">⚙️ Manage Categories</button>
+        <div class="custom-cat-panel hidden" id="customCatPanel">
+          <div class="custom-cat-row">
+            <input type="text" id="newCategoryInput" placeholder="New category name" maxlength="30" />
+            <button class="btn btn-secondary" id="addCategoryBtn">Add</button>
+          </div>
+          <span class="error-msg" id="err-newCategory"></span>
+          <div class="custom-cat-list" id="customCatList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sort Controls -->
+    <section class="card sort-section">
+      <h2>Transactions</h2>
+      <div class="sort-controls">
+        <label for="sortBy">Sort by:</label>
+        <select id="sortBy">
+          <option value="date-desc">Date (Newest)</option>
+          <option value="date-asc">Date (Oldest)</option>
+          <option value="amount-desc">Amount (High → Low)</option>
+          <option value="amount-asc">Amount (Low → High)</option>
+          <option value="category-asc">Category (A → Z)</option>
+        </select>
+      </div>
+
+      <!-- Transaction List -->
+      <div class="transaction-list" id="transactionList">
+        <p class="empty-state" id="emptyState">No transactions yet. Add one above!</p>
+      </div>
+    </section>
+
+    <!-- Chart Section -->
+    <section class="card chart-section">
+      <h2>Spending by Category</h2>
+      <div class="chart-wrapper">
+        <canvas id="spendingChart"></canvas>
+      </div>
+      <p class="empty-state hidden" id="chartEmptyState">Add transactions to see the chart.</p>
+    </section>
+
+  </main>
+
+  <!-- ===== DAILY TAB ===== -->
+  <main class="tab-content hidden" id="tab-daily">
+    <section class="card daily-section">
+      <h2>Total Spend per Tanggal</h2>
+
+      <!-- Filter by date range -->
+      <div class="daily-filter">
+        <div class="daily-filter-row">
+          <div class="form-group">
+            <label for="filterFrom">Dari</label>
+            <input type="date" id="filterFrom" />
+          </div>
+          <div class="form-group">
+            <label for="filterTo">Sampai</label>
+            <input type="date" id="filterTo" />
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-reset-filter" id="resetFilterBtn">↺ Reset Filter</button>
+      </div>
+
+      <!-- Per-date accordion list -->
+      <div class="daily-list" id="dailyList">
+        <p class="empty-state">No transactions yet.</p>
+      </div>
+
+      <!-- Daily Pie Chart -->
+      <div class="chart-section card-inner-chart">
+        <h3 class="breakdown-title">Spending by Category</h3>
+        <div class="chart-wrapper">
+          <canvas id="dailyChart"></canvas>
+        </div>
+        <p class="empty-state hidden" id="dailyChartEmpty">Add transactions to see the chart.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== MONTHLY TAB ===== -->
+  <main class="tab-content hidden" id="tab-monthly">
+    <section class="card monthly-section">
+      <h2>Monthly Summary</h2>
+      <div class="month-picker-row">
+        <button class="btn btn-ghost" id="prevMonth">&#8592;</button>
+        <span class="month-label" id="monthLabel"></span>
+        <button class="btn btn-ghost" id="nextMonth">&#8594;</button>
+      </div>
+
+      <div class="monthly-stats" id="monthlyStats">
+        <div class="stat-card">
+          <span class="stat-label">Total Spent</span>
+          <span class="stat-value" id="monthlyTotal">Rp 0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Transactions</span>
+          <span class="stat-value" id="monthlyCount">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Avg per Day</span>
+          <span class="stat-value" id="monthlyAvg">Rp 0</span>
+        </div>
+      </div>
+
+      <h3 class="breakdown-title">Category Breakdown</h3>
+      <div class="monthly-breakdown" id="monthlyBreakdown"></div>
+
+      <!-- Monthly Pie Chart -->
+      <div class="chart-section card-inner-chart">
+        <h3 class="breakdown-title">Spending by Category</h3>
+        <div class="chart-wrapper">
+          <canvas id="monthlyChart"></canvas>
+        </div>
+        <p class="empty-state hidden" id="monthlyChartEmpty">No data for this month.</p>
+      </div>
+
+      <h3 class="breakdown-title">Transactions This Month</h3>
+      <div class="transaction-list" id="monthlyTxList">
+        <p class="empty-state">No transactions this month.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== DELETE CONFIRMATION MODAL ===== -->
+  <div class="modal-overlay hidden" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-icon">🗑️</div>
+      <h3 class="modal-title" id="modalTitle">Hapus Transaksi?</h3>
+      <p class="modal-body" id="modalBody">Yakin ingin menghapus item ini?</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="modalCancelBtn">Batal</button>
+        <button class="btn btn-confirm-delete" id="modalConfirmBtn">Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
